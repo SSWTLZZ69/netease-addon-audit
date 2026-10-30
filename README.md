@@ -154,4 +154,4 @@ Pylint 导入工具模块后才加入提交包路径；静态分析不等于安�
 
 ## 当前验证状态
 
-Windows 本机 Python 2.7.18 上已执行真实包扫描与固定版本 Pylint；Docker/Linux 运行交由本仓库 CI 验证，本机没有 Docker，未宣称容器验证通过。工具不会为获得绿灯而改动被检查项目。
+Windows 本机 Python 2.7.18 上已执行真实包扫描与固定版本 Pylint；GitHub Actions 的 Linux runner 已通过 Docker 镜像构建、全部规则模块导入、Python 语法与 CLI 检查。远程 CI 不上传真实模组或模拟网易审核，不代表模组已通过平台机审。工具不会为获得绿灯而改动被检查项目。
