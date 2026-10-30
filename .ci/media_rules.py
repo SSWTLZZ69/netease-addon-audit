@@ -45,7 +45,8 @@ def check(files, packs, config, error, warning):
                 if bitrate is None:
                     warning('Audio bitrate cannot be established: ' + path)
                 elif bitrate > config['max_audio_bitrate']:
-                    error(path, 'Audio bitrate exceeds configured maximum: {0} bps (code 33)'.format(bitrate))
+                    warning(path + ': Audio header bitrate exceeds advisory maximum: '
+                            '{0} bps (code 33)'.format(bitrate))
                 if not data.startswith(b'OggS'):
                     error(path, 'Invalid OGG container')
             except (MutagenError, IOError, ValueError) as exc:

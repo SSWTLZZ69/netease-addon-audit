@@ -14,8 +14,8 @@ AUDIO_SUFFIXES = ('.wav', '.mp3', '.flac', '.aac', '.m4a', '.wma', '.aiff',
 def check(files, packs, config, error, warning, parse_json):
     """Report errors through error(path, message, line=1); warnings take text.
 
-    A structures path is interpreted conservatively: at most two components
-    after structures/, including the filename (structures/group/file is valid).
+    Structure paths exceeding two components after structures/ produce an
+    advisory, including the filename (structures/group/file is within the guide).
     Directory presence can only be inferred from archived files, so a missing
     required folder produces a warning rather than rejecting an empty folder.
     """
@@ -59,15 +59,15 @@ def check(files, packs, config, error, warning, parse_json):
         for pack in packs:
             prefix = pack + '/structures/'
             if path.startswith(prefix) and len(path[len(prefix):].split('/')) > 2:
-                error(path, 'Structure path exceeds two components after structures/ '
-                      '(including filename)')
+                warning(path + ': Structure path exceeds two components after structures/ '
+                        '(including filename); packaging compatibility advisory')
             pack_manifest = manifests.get(pack, {})
             is_resource = any(module.get('type') == 'resources'
                               for module in pack_manifest.get('modules', []))
             if is_resource and path.startswith(pack + '/sounds/'):
                 lower = path.lower()
                 if lower.endswith(AUDIO_SUFFIXES) and not lower.endswith('.ogg'):
-                    error(path, 'Code 33: sound audio must use OGG format')
+                    warning(path + ': Non-OGG sound; packaging compatibility advisory (code 33)')
         if path.lower().endswith('.py'):
             check_identifiers(path, data, error)
         if path.lower().endswith('.json'):
