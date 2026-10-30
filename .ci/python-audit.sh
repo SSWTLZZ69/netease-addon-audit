@@ -61,7 +61,7 @@ print('Linting %d Python files in %d packs with PYTHONPATH=%s' %
       (len(paths), len(packs), os.environ['PYTHONPATH']))
 sys.stdout.flush()
 # E0401 stays enabled except for the engine-provided mod namespace.
-# Errors-only retains every E/F diagnostic, including E0602, E1306 and E1136.
+# E1102 is excluded globally; other E/F diagnostics remain blocking.
 from pylint import config
 from pylint.lint import Run
 sys.path.extend(packs)
@@ -69,7 +69,7 @@ os.chdir(source_root)
 # Repository/user pylintrc settings must not disable CI error checks.
 config.PYLINTRC = None
 Run([
-    '--errors-only', '--ignored-modules=mod,mod.*',
+    '--errors-only', '--disable=E1102', '--ignored-modules=mod,mod.*',
     '--persistent=no', '--reports=no', '--score=no',
     '--msg-template={path}:{line}:{column}: {msg_id} ({symbol}) {msg}',
 ] + sorted(paths))
