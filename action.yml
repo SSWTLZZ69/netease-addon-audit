@@ -1,0 +1,27 @@
+name: NetEase Addon Audit
+description: Python 2.7 static and submission ZIP preflight checks for NetEase Minecraft addons
+inputs:
+  source:
+    description: Git project path relative to workspace (used if artifact is empty)
+    default: .
+  artifact:
+    description: Existing submission ZIP path relative to workspace
+    default: ''
+  baseline:
+    description: Previous accepted ZIP for the same platform work ID
+    default: ''
+  config:
+    description: Optional complete JSON rules file
+    default: ''
+  require-baseline:
+    description: Fail if baseline is absent
+    default: 'false'
+runs:
+  using: docker
+  image: Dockerfile
+  entrypoint: /bin/sh
+  args:
+    - /opt/audit/.ci/action-entrypoint.sh
+branding:
+  icon: check-circle
+  color: green

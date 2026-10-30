@@ -1,0 +1,14 @@
+# Python 2.7 runtime dependencies for the pinned Pylint/Astroid toolchain.
+pylint==1.9.5
+astroid==1.6.6
+isort==4.3.21
+mccabe==0.6.1
+six==1.16.0
+lazy-object-proxy==1.4.3
+wrapt==1.12.1
+backports.functools-lru-cache==1.6.6
+configparser==4.0.2
+enum34==1.1.10
+singledispatch==3.7.0
+futures==3.3.0
+colorama==0.4.6; sys_platform == "win32"

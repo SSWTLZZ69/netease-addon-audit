@@ -1,0 +1,21 @@
+name: Tool validation
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Python 2.7 audit environment
+        run: docker build -t netease-addon-audit .
+      - name: Check tooling syntax and CLI
+        run: |
+          sh -n entrypoint.sh .ci/action-entrypoint.sh .ci/python-audit.sh
+          docker run --rm --entrypoint python netease-addon-audit -B -c "import ast; ast.parse(open('/opt/audit/.ci/audit.py', 'rb').read())"
+          docker run --rm --entrypoint python netease-addon-audit /opt/audit/.ci/audit.py --help
+          git diff --check

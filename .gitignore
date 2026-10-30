@@ -1,0 +1,4 @@
+out/
+.venv27*/
+__pycache__/
+*.pyc

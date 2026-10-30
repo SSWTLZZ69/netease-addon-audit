@@ -1,0 +1,6 @@
+{
+  "packs": [],
+  "allow_json_comments": true,
+  "blocked_suffixes": [".mcp", ".pyc", ".pyo"],
+  "blocked_python": ["sys", "collections.namedtuple"]
+}
