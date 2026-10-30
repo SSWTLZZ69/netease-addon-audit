@@ -38,10 +38,8 @@ for directory, subdirectories, filenames in os.walk(source_root):
             continue
         with open(os.path.join(directory, name), 'rb') as stream:
             manifest = json.loads(stream.read().decode('utf-8-sig'))
-        if any(module.get('type') in ('data', 'resources')
-               for module in manifest.get('modules', [])):
-            packs.append(directory)
-            break
+        packs.append(directory)
+        break
 
 if not packs:
     sys.exit('No behavior/resource packs discovered beneath %s' % source_root)
@@ -51,7 +49,7 @@ for pack in packs:
     for directory, subdirectories, filenames in os.walk(pack):
         subdirectories.sort()
         paths.update(os.path.join(directory, name)
-                     for name in filenames if name.endswith('.py'))
+                     for name in filenames if name.lower().endswith('.py'))
 
 if not paths:
     print('No Python files found in %d discovered packs' % len(packs))

@@ -1,6 +1,11 @@
 {
   "packs": [],
   "allow_json_comments": true,
+  "allow_sapi": false,
+  "require_skin_alpha": true,
+  "max_audio_bitrate": 128000,
+  "max_texture_pixels": null,
+  "max_path_bytes": null,
   "blocked_suffixes": [".mcp", ".pyc", ".pyo"],
   "blocked_python": ["sys", "collections.namedtuple"]
 }

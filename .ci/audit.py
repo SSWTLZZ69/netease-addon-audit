@@ -13,6 +13,8 @@ import json
 import os
 import re
 import subprocess
+import tokenize
+import StringIO
 import sys
 import uuid
 import zipfile
@@ -108,6 +110,10 @@ def check_python(path, data, blocked):
     except SyntaxError as exc:
         error(path, str(exc), exc.lineno or 1)
         return
+    for token in tokenize.generate_tokens(StringIO.StringIO(data).readline):
+        if token[0] == tokenize.COMMENT and re.search(
+                r'pylint\s*:\s*.*\b(disable|skip-file)\b', token[1], re.I):
+            error(path, 'Pylint suppression prevents complete preflight analysis', token[2][0])
     # Collect every import, including function-local imports. Multiple bindings
     # are retained so an alias in one scope cannot hide a forbidden import.
     aliases = {}
@@ -165,15 +171,23 @@ def manifests(files, packs):
             try:
                 doc = strict_json(files[path])
                 header = doc['header']
-                identity = header['uuid']
+                identity = str(uuid.UUID(header['uuid']))
                 current = version(header['version'], path)
+                minimum = version(header['min_engine_version'], path)
+                if minimum is not None and minimum < (1, 18, 0):
+                    error(path, 'Minimum engine version must be at least 1.18.0 (code 37)')
+                if not doc['modules']:
+                    error(path, 'Manifest modules must not be empty')
+                for module in doc['modules']:
+                    if module['type'] not in ('data', 'resources', 'script', 'javascript', 'client_data'):
+                        error(path, 'Unknown manifest module type: ' + module['type'])
                 entries = [('header', identity)]
                 for index, module in enumerate(doc['modules']):
                     entries.append(('module-' + str(index), module['uuid']))
                     version(module['version'], path)
                 for kind, value in entries:
-                    uuid.UUID(value)
-                    previous = identities.get(value.lower())
+                    value = str(uuid.UUID(value))
+                    previous = identities.get(value)
                     owner = (pack, kind)
                     if previous is not None and previous != owner:
                         error(path, 'UUID collision: ' + value)
@@ -192,8 +206,12 @@ def manifests(files, packs):
         for dependency in item['manifest'].get('dependencies', []):
             if 'uuid' not in dependency:
                 continue
-            target = headers.get(dependency['uuid'].lower())
-            required = version(dependency['version'], pack + '/manifest.json')
+            try:
+                target = headers.get(str(uuid.UUID(dependency['uuid'])))
+                required = version(dependency['version'], pack + '/manifest.json')
+            except (ValueError, KeyError, TypeError, AttributeError) as exc:
+                error(pack, 'Invalid manifest dependency: ' + str(exc))
+                continue
             if target is None:
                 warning('External dependency requires separate review input: ' + dependency['uuid'])
             elif required != target['version']:
@@ -274,6 +292,19 @@ def main():
             counts['python'] += 1
             check_python(path, data, config['blocked_python'])
     current = manifests(files, packs)
+    from content_rules import check as check_content
+    from media_rules import check as check_media
+    check_content(files, current, config, error, warning, strict_json)
+    counts.update(check_media(files, current, config, error, warning))
+    for path in files:
+        try:
+            path.encode('ascii')
+        except UnicodeEncodeError:
+            error(path, 'Non-ASCII submission path may be rejected (code 16)')
+        if config['max_path_bytes'] is not None and len(path.encode('utf-8')) > config['max_path_bytes']:
+            error(path, 'Path exceeds configured byte limit (local policy, code 27 risk)')
+        if any(part in ('level.dat', 'level.dat_old', 'levelname.txt', 'db') for part in path.split('/')):
+            error(path, 'Addon contains world data (code 13)')
     if args.baseline:
         old_files = read_zip(args.baseline)
         old = manifests(old_files, discover_packs(old_files))

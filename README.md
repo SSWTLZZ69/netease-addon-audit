@@ -8,13 +8,14 @@
 
 | 类型 | 检查 |
 | --- | --- |
-| 错误码 18 | Python 2.7 语法；Pylint 所有 E/F 诊断，包括 E0401、E0602、E1306、E1136 |
-| 已知禁用 API | 默认 `sys`、`collections.namedtuple`，支持直接导入、导入别名和属性访问 |
-| 错误码 36 | `.mcp`；额外阻止 `.pyc`、`.pyo` 混入提交包 |
-| 错误码 40 | JSON 解析；默认允许 Minecraft JSONC 注释，禁止尾随逗号和 NaN/Infinity |
-| manifest | UUID 格式及包内冲突、三元组版本、本地依赖版本、双 manifest 一致性 |
-| 错误码 42 | 可选：按同一作品的已接受 ZIP，按 header.uuid 对比内容和版本 |
-| ZIP | 重复路径、大小写冲突、不安全路径、符号链接、清单外文件 |
+| Python | 语法、静态错误、已知禁用 API、异常重复命名、检查屏蔽指令 |
+| 包结构 | 包目录布局、结构文件深度、世界数据混入、文件路径及禁用扩展名 |
+| JSON | 编码、语法、数字后缀键范围；内容文件支持 JSONC 注释 |
+| manifest | 包身份冲突、版本格式、最低引擎版本、依赖版本、清单一致性 |
+| 资源 | 玩家渲染控制器、音频格式与码率、PNG 可读性、位图字体、皮肤透明通道 |
+| 发布基线 | 比较历史提交包的身份、内容和版本递增 |
+| 权限 | Script API 声明与上传权限配置 |
+| ZIP | 完整解压、重复及大小写冲突路径、不安全路径、符号链接、清单外文件 |
 
 默认禁用规则来自实际拒审记录，**不是完整官方禁用列表**。Python 检查固定 Pylint 1.9.5 / Astroid 1.6.6；固定版本用于复现本工具结果，不代表网易使用这些版本。所有 E/F 保留，部分引擎动态对象可能产生推断误报，需人工判断，不自动修复或屏蔽。
 
@@ -89,7 +90,7 @@ jobs:
           source: .
           # artifact: dist/release.zip  # 先执行项目实际构建，再检查此文件
           # baseline: release-history/accepted.zip
-          # require-baseline: 'true'
+          # require_baseline: 'true'
           # config: addon-audit.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -111,6 +112,11 @@ jobs:
 {
   "packs": ["my_behavior_pack", "my_resource_pack"],
   "allow_json_comments": true,
+  "allow_sapi": false,
+  "require_skin_alpha": true,
+  "max_audio_bitrate": 128000,
+  "max_texture_pixels": null,
+  "max_path_bytes": null,
   "blocked_suffixes": [".mcp", ".pyc", ".pyo"],
   "blocked_python": ["sys", "collections.namedtuple"]
 }
@@ -131,6 +137,20 @@ jobs:
 - 已有包不匹配基线 UUID 时失败，防止通过随机换 UUID 绕过版本检查。独立新作品应使用自己的基线，首次发布需人工核实身份。
 - 仅检查输入范围内的 UUID 冲突；无法查询网易全平台或其他未提供作品的 UUID 占用。
 - 不支持自动判断平台是否已记录失败提交的版本。维护基线时应结合平台实际状态。
+
+## 官方规则与检查边界
+
+规则依据：[我的世界中国版打包错误信息汇整](https://mc.163.com/m/dev/mcmanual/mc-dev/mcguide/50-常见问题答疑/60-我的世界中国版打包错误信息汇整.html)。本工具仅处理 Addon，不检查地图组件、作品定价、上架接口、平台加密和打包服务内部故障。
+
+- 音频检查 OGG 容器和头部码率，默认上限 128000 bps；不是全流解码或峰值码率分析。无法确定码率时报告告警。
+- PNG 检查可读性；位图字体检查 256×256 图集和全零透明像素，不判断字形是否正确。皮肤透明通道规则仅应用于 `skins/` 下的 PNG。
+- 最低引擎版本按官方公开要求检查。Script API 默认拒绝；只有确认上传账号已有对应权限后才设置 `allow_sapi=true`，该配置本身不能验证账号权限。
+- ZIP 的空目录不参与文件映射，缺少必需目录时给出告警；资源包误放行为实体目录会失败。
+- 结构路径限制按 `structures/` 后最多两个路径分量执行，包含文件名。
+- 官方未公布统一纹理像素和路径字节上限，`max_texture_pixels`、`max_path_bytes` 默认不启用；配置后属于调用方的本地预算，不冒充官方阈值。
+- UUID 只检查当前输入与显式基线；平台全局占用、官方内容指纹、完整禁用 API、账号权限与运行时表现仍需平台或游戏验证。
+
+Pylint 导入工具模块后才加入提交包路径；静态分析不等于安全沙箱。处理不可信提交应使用隔离容器、只读源码、不提供凭据，并限制运行时间和资源。源文件中的 Pylint 禁用指令会使预检失败，避免诊断被静默屏蔽。
 
 ## 当前验证状态
 

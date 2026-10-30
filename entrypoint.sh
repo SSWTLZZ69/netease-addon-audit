@@ -4,7 +4,7 @@ set -eu
 tool_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 output=${AUDIT_OUTPUT:-out/audit}
 status=0
-python "$tool_dir/.ci/audit.py" --output "$output" "$@" || status=$?
+python "$tool_dir/.ci/audit.py" "$@" --output "$output" || status=$?
 if [ -d "$output/payload" ]; then
     sh "$tool_dir/.ci/python-audit.sh" "$output/payload" "$output" || status=$?
 else

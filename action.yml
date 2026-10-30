@@ -13,7 +13,7 @@ inputs:
   config:
     description: Optional complete JSON rules file
     default: ''
-  require-baseline:
+  require_baseline:
     description: Fail if baseline is absent
     default: 'false'
 runs:

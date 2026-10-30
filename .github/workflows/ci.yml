@@ -16,6 +16,6 @@ jobs:
       - name: Check tooling syntax and CLI
         run: |
           sh -n entrypoint.sh .ci/action-entrypoint.sh .ci/python-audit.sh
-          docker run --rm --entrypoint python netease-addon-audit -B -c "import ast; ast.parse(open('/opt/audit/.ci/audit.py', 'rb').read())"
+          docker run --rm --entrypoint python netease-addon-audit -B -c "import ast, glob; [ast.parse(open(p, 'rb').read()) for p in glob.glob('/opt/audit/.ci/*.py')]; import sys; sys.path.insert(0, '/opt/audit/.ci'); import content_rules, media_rules"
           docker run --rm --entrypoint python netease-addon-audit /opt/audit/.ci/audit.py --help
           git diff --check
